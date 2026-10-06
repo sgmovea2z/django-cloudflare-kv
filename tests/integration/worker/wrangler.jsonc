@@ -1,0 +1,13 @@
+{
+  "name": "django-cloudflare-kv-runtime-gate",
+  "main": "worker.py",
+  "compatibility_date": "2026-10-02",
+  "compatibility_flags": ["python_workers"],
+  "build": {
+    "command": "true",
+    "watch_dir": "watch"
+  },
+  "kv_namespaces": [
+    { "binding": "DJANGO_CACHE", "id": "runtime-gate-placeholder" }
+  ]
+}

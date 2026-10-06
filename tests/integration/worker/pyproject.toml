@@ -1,0 +1,9 @@
+[project]
+name = "django-cloudflare-kv-runtime-gate"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = ["django-cloudflare-kv", "django-cloudflare-kv-example"]
+
+[tool.uv.sources]
+django-cloudflare-kv = { path = "../../../dist/django_cloudflare_kv-0.1.0-py3-none-any.whl", editable = false }
+django-cloudflare-kv-example = { path = "../../../examples/django_worker", editable = false }

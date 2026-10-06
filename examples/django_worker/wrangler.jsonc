@@ -1,0 +1,9 @@
+{
+  "name": "django-cloudflare-kv-django-example",
+  "main": "src/entry.py",
+  "compatibility_date": "2026-10-02",
+  "compatibility_flags": ["python_workers"],
+  "build": { "command": "true", "watch_dir": "test-watch" },
+  "kv_namespaces": [{ "binding": "DJANGO_CACHE", "id": "django-example-placeholder" }],
+  "observability": { "enabled": true, "traces": { "enabled": true } }
+}

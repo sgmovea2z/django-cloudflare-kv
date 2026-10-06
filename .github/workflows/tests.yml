@@ -1,0 +1,84 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.16.0"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.22"
+      - run: npm install --global wrangler@4.147.0
+      - run: uv sync --locked --python 3.13
+      - run: uv run ruff check src tests
+      - run: uv run ruff format --check src tests
+      - run: uv run basedpyright
+      - run: uv build
+      - name: Record tooling versions
+        run: |
+          node --version
+          uv --version
+          wrangler --version
+          uv run --project examples/django_worker pywrangler --version
+
+  compatibility:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - django: ">=5.2,<5.3"
+            label: "5.2"
+          - django: ">=6.0,<6.1"
+            label: "6.0"
+          - django: ">=6.1,<6.2"
+            label: "6.1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.16.0"
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.22"
+      - run: npm install --global wrangler@4.147.0
+      - name: Build package wheel
+        run: uv build
+      - name: Create isolated matrix environment
+        run: |
+          uv venv --python 3.13 .venv-matrix
+          uv pip install --python .venv-matrix/bin/python \
+            "dist/django_cloudflare_kv-0.1.0-py3-none-any.whl" \
+            "django${{ matrix.django }}" pytest pytest-asyncio hypothesis \
+            packaging workers-py==1.17.6 workers-runtime-sdk==1.9.2
+      - name: Prepare Worker consumer with this Django series
+        env:
+          MATRIX_DJANGO: ${{ matrix.django }}
+        run: |
+          python -c 'from pathlib import Path; p=Path("examples/django_worker/pyproject.toml"); s=p.read_text(); p.write_text(s.replace("django>=5.2,<6.2", "django" + __import__("os").environ["MATRIX_DJANGO"]))'
+          uv lock --project tests/integration/worker --upgrade
+          uv run --project . --no-sync --directory tests/integration/worker pywrangler sync --force
+      - name: Verify exact matrix row and run contracts
+        env:
+          DJANGO_COMPATIBILITY_CONSTRAINT: ${{ matrix.django }}
+        run: |
+          .venv-matrix/bin/python -c 'import django, os; from packaging.specifiers import SpecifierSet; from packaging.version import Version; constraint=os.environ["DJANGO_COMPATIBILITY_CONSTRAINT"]; v=Version(django.get_version()); assert v in SpecifierSet(constraint), "Django " + str(v) + " mismatches " + constraint; print("Python " + __import__("sys").version + "; Django " + str(v))'
+          DJANGO_COMPATIBILITY_CONSTRAINT='${{ matrix.django }}' .venv-matrix/bin/python -m pytest tests --ignore=tests/integration -q
+      - name: Verify local Worker integration
+        env:
+          DJANGO_COMPATIBILITY_CONSTRAINT: ${{ matrix.django }}
+        run: |
+          DJANGO_COMPATIBILITY_CONSTRAINT='${{ matrix.django }}' .venv-matrix/bin/python -m pytest tests/integration -q

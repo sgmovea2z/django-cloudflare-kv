@@ -1,0 +1,34 @@
+# Python virtual environments and bytecode
+.venv/
+.venv-*/
+venv/
+__pycache__/
+*.py[cod]
+
+# Generated test, lint, and build output
+.hypothesis/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# Node dependencies and local orchestration state
+node_modules/
+# .omo/ contains agent plan state and evidence files; it is scratch, not product.
+.omo/
+
+# Wrangler and Workers-generated dependencies/state
+.wrangler/
+python_modules/
+tests/integration/worker/.venv-workers/
+tests/integration/worker/python_modules/
+tests/integration/worker/.wrangler/
+
+# Local environment and editor metadata
+.env
+.env.*
+.DS_Store
+.serena/
+.vscode/
+.idea/
