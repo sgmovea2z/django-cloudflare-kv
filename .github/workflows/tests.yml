@@ -70,7 +70,7 @@ jobs:
         run: |
           python -c 'from pathlib import Path; p=Path("examples/django_worker/pyproject.toml"); s=p.read_text(); p.write_text(s.replace("django>=5.2,<6.2", "django" + __import__("os").environ["MATRIX_DJANGO"]))'
           uv lock --project tests/integration/worker --upgrade
-          uv run --project . --no-sync --directory tests/integration/worker pywrangler sync --force
+          cd tests/integration/worker && ../../../.venv-matrix/bin/pywrangler sync --force
       - name: Verify exact matrix row and run contracts
         env:
           DJANGO_COMPATIBILITY_CONSTRAINT: ${{ matrix.django }}
